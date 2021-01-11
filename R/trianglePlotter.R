@@ -103,17 +103,38 @@ trianglePlotter <- function(tree, dropped.results, clade.table, branches, identi
 	#set branches to the correct colors. i suspect this is too simplistic
 	#to just do one then the other, but try this for now. probably, there is some complicated
 	#nesting that can happen that needs to be anticipated, but seems to work for simplest
-	#cases
-	for(i in 1:length(identifyShifts.obj$losses))
+	#cases. now adding a hack so that if root state is present it goes gains then losses,
+	#and if root is absent it goes losses then gain. i think maybe there'd have to be
+	#many sequential shifts in order to make this not work. still, would be good to tackle
+	#this head on
+	if(root.state=="present")
 	{
-	  toChange <- which.edge(tree, unlist(identifyShifts.obj$losses[i]))
-	  cols[toChange] <- absence.color
+  	for(i in 1:length(identifyShifts.obj$losses))
+  	{
+  	  toChange <- which.edge(tree, unlist(identifyShifts.obj$losses[i]))
+  	  cols[toChange] <- absence.color
+  	}
+  	
+  	for(i in 1:length(identifyShifts.obj$gains))
+  	{
+  	  toChange <- which.edge(tree, unlist(identifyShifts.obj$gains[i]))
+  	  cols[toChange] <- presence.color
+  	}
 	}
 	
-	for(i in 1:length(identifyShifts.obj$gains))
+	else
 	{
-	  toChange <- which.edge(tree, unlist(identifyShifts.obj$gains[i]))
-	  cols[toChange] <- presence.color
+	  for(i in 1:length(identifyShifts.obj$gains))
+	  {
+	    toChange <- which.edge(tree, unlist(identifyShifts.obj$gains[i]))
+	    cols[toChange] <- presence.color
+	  }
+
+	  for(i in 1:length(identifyShifts.obj$losses))
+	  {
+	    toChange <- which.edge(tree, unlist(identifyShifts.obj$losses[i]))
+	    cols[toChange] <- absence.color
+	  }
 	}
 	
 	#plot the tree structure here. critically, this is going to plot the structure in black,
