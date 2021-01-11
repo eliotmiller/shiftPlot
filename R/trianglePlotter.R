@@ -16,10 +16,13 @@
 #' be replaced with a name of the user's choosing. This input (clade.table) is the output
 #' of optimalCollapse.
 #' @param branches Result of a call to firstBranches.
+#' @param identifyShifts.obj Result of a call to identifyShifts.
 #' @param presence.color What color clades for which the trait is present should be colored.
 #' @param absence.color What color clades for which the trait is absent should be colored.
 #' @param label.offset How far away from the tips the clade name should be positioned.
-#' @param text.cex The size of the clade labels. 
+#' @param text.cex The size of the clade labels.
+#' @param root.state What the inferred state of the root is. Set to either "present" or
+#' "absent". In the future will make this be auto-detected.
 #' 
 #' @details Should change the graphical parameters so there's more space for long clade names.
 #' Should not plot the tips. Should allow customization of edge colors. 
@@ -52,17 +55,24 @@
 #' row.names(induced) <- NULL
 #' 
 #' #find the optimal collapse configuration
-#' result <- optimalCollapse(phy, induced, FALSE)
+#' collapsed <- optimalCollapse(phy, induced, FALSE)
+#' 
+#' shifts <- identifyShifts(phy, induced, FALSE)
 #' 
 #' #collapse the tree
-#' dropped <- dropManyTips(phy, result)
+#' dropped <- dropManyTips(phy, collapsed)
 #' 
 #' #use the polytomyBind function
-#' polyTree <- polytomyBind(dropped, result)
+#' polyTree <- polytomyBind(dropped, collapsed)
 #' 
-#' branchingResults <- firstBranches(phy, dropped, result)
+#' branchingResults <- firstBranches(phy, dropped, collapsed)
 #' 
-#' saveMe <- trianglePlotter(polyTree, dropped, result, branchingResults, "red", "black", 0.05, 0.2)
+#' saveMe <- trianglePlotter(tree=polyTree, dropped.results=dropped, clade.table=collapsed,
+#' branches=branchingResults, identifyShifts.obj=shifts,
+#' presence.color="red", absence.color="black",
+#' label.offset=0.3, text.cex=0.09,
+#' root.state="present")
+#' 
 
 trianglePlotter <- function(tree, dropped.results, clade.table, branches, identifyShifts.obj,
                             presence.color, absence.color, label.offset, text.cex, root.state)

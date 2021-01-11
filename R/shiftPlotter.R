@@ -56,7 +56,11 @@
 #' 
 #' branchingResults <- firstBranches(phy, dropped, collapsed)
 #' 
-#' saveMe <- trianglePlotter(polyTree, dropped, collapsed, branchingResults, "red", "black", 0.05, 0.2)
+#' saveMe <- trianglePlotter(tree=polyTree, dropped.results=dropped, clade.table=collapsed,
+#' branches=branchingResults, identifyShifts.obj=shifts,
+#' presence.color="red", absence.color="black",
+#' label.offset=0.3, text.cex=0.09,
+#' root.state="present")
 #' 
 #' shiftPlotter(phy, polyTree, saveMe, shifts, "red", "black", 1)
 

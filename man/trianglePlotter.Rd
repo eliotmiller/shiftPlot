@@ -9,10 +9,12 @@ trianglePlotter(
   dropped.results,
   clade.table,
   branches,
+  identifyShifts.obj,
   presence.color,
   absence.color,
   label.offset,
-  text.cex
+  text.cex,
+  root.state
 )
 }
 \arguments{
@@ -34,6 +36,8 @@ of optimalCollapse.}
 
 \item{branches}{Result of a call to firstBranches.}
 
+\item{identifyShifts.obj}{Result of a call to identifyShifts.}
+
 \item{presence.color}{What color clades for which the trait is present should be colored.}
 
 \item{absence.color}{What color clades for which the trait is absent should be colored.}
@@ -41,6 +45,9 @@ of optimalCollapse.}
 \item{label.offset}{How far away from the tips the clade name should be positioned.}
 
 \item{text.cex}{The size of the clade labels.}
+
+\item{root.state}{What the inferred state of the root is. Set to either "present" or
+"absent". In the future will make this be auto-detected.}
 }
 \description{
 Use the optimal collapses to create a tree where triangles represent clades.
@@ -73,17 +80,24 @@ induced[103,] <- 0
 row.names(induced) <- NULL
 
 #find the optimal collapse configuration
-result <- optimalCollapse(phy, induced, FALSE)
+collapsed <- optimalCollapse(phy, induced, FALSE)
+
+shifts <- identifyShifts(phy, induced, FALSE)
 
 #collapse the tree
-dropped <- dropManyTips(phy, result)
+dropped <- dropManyTips(phy, collapsed)
 
 #use the polytomyBind function
-polyTree <- polytomyBind(dropped, result)
+polyTree <- polytomyBind(dropped, collapsed)
 
-branchingResults <- firstBranches(phy, dropped, result)
+branchingResults <- firstBranches(phy, dropped, collapsed)
 
-saveMe <- trianglePlotter(polyTree, dropped, result, branchingResults, "red", "black", 0.05, 0.2)
+saveMe <- trianglePlotter(tree=polyTree, dropped.results=dropped, clade.table=collapsed,
+branches=branchingResults, identifyShifts.obj=shifts,
+presence.color="red", absence.color="black",
+label.offset=0.3, text.cex=0.09,
+root.state="present")
+
 }
 \author{
 Eliot Miller and Bruce Martin
