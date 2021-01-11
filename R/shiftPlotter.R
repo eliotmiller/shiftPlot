@@ -85,27 +85,40 @@ shiftPlotter <- function(orig.tree, poly.tree, coords, identifyShifts.obj, prese
 
 		#pull taxa for simplicity
 		taxa <- identifyShifts.obj$gains[[i]]
-
-		#figure out what the tip numbers are that correspond to those taxa in each tree
-		theTipsOrig <- tipNos[orig.tree$tip.label %in% taxa]
-		theTipsPoly <- tipNos[poly.tree$tip.label %in% taxa]
-
-		#find the mrca of those taxa in each tree
-		mrcaNodeOrig <- ape::getMRCA(orig.tree, taxa)
-		mrcaNodePoly <- ape::getMRCA(poly.tree, taxa)
 		
-		#find ALL taxa that descend from poly mrca	
-		allTaxa <- geiger::tips(poly.tree, mrcaNodePoly)
-		allTips <- tipNos[poly.tree$tip.label %in% allTaxa]
+		#if there's just a single taxon here, then the code below would cause an error.
+		#put a dot down on that single taxon and move on to next if that's the case
+		if(length(taxa)==1)
+		{
+		  xCoord <- max(times)
+		  tempEdge <- which.edge(poly.tree, as.character(identifyShifts.obj$gains[i]))
+		  tempTip <- poly.tree$edge[tempEdge,2]
+		  yCoord <- coords$yy[tempTip]
+		}
 
-		#find the original branching time of that node
-		theTime <- times[names(times)==mrcaNodeOrig]
-
-		#use the time to find actual x-coordinates
-		xCoord <- max(times)-theTime
-
-		#highly experimental way of finding the y-coordinate of the shift.
-		yCoord <- coords$yy[mrcaNodePoly]
+		else
+		{
+  		#figure out what the tip numbers are that correspond to those taxa in each tree
+  		theTipsOrig <- tipNos[orig.tree$tip.label %in% taxa]
+  		theTipsPoly <- tipNos[poly.tree$tip.label %in% taxa]
+  
+  		#find the mrca of those taxa in each tree
+  		mrcaNodeOrig <- ape::getMRCA(orig.tree, taxa)
+  		mrcaNodePoly <- ape::getMRCA(poly.tree, taxa)
+  		
+  		#find ALL taxa that descend from poly mrca	
+  		allTaxa <- geiger::tips(poly.tree, mrcaNodePoly)
+  		allTips <- tipNos[poly.tree$tip.label %in% allTaxa]
+  
+  		#find the original branching time of that node
+  		theTime <- times[names(times)==mrcaNodeOrig]
+  
+  		#use the time to find actual x-coordinates
+  		xCoord <- max(times)-theTime
+  
+  		#highly experimental way of finding the y-coordinate of the shift.
+  		yCoord <- coords$yy[mrcaNodePoly]
+		}
 
 		#put the point down
 		points(x=xCoord, y=yCoord, cex=pt.cex, col=presence.color, pch=20)
@@ -122,26 +135,39 @@ shiftPlotter <- function(orig.tree, poly.tree, coords, identifyShifts.obj, prese
 		#pull taxa for simplicity
 		taxa <- identifyShifts.obj$losses[[i]]
 
-		#figure out what the tip numbers are that correspond to those taxa in each tree
-		theTipsOrig <- tipNos[orig.tree$tip.label %in% taxa]
-		theTipsPoly <- tipNos[poly.tree$tip.label %in% taxa]
-
-		#find the mrca of those taxa in each tree
-		mrcaNodeOrig <- getMRCA(orig.tree, taxa)
-		mrcaNodePoly <- getMRCA(poly.tree, taxa)
+		#if there's just a single taxon here, then the code below would cause an error.
+		#put a dot down on that single taxon and move on to next if that's the case
+		if(length(taxa)==1)
+		{
+		  xCoord <- max(times)
+		  tempEdge <- which.edge(poly.tree, as.character(identifyShifts.obj$losses[i]))
+		  tempTip <- poly.tree$edge[tempEdge,2]
+		  yCoord <- coords$yy[tempTip]
+		}
 		
-		#find ALL taxa that descend from poly mrca	
-		allTaxa <- tips(poly.tree, mrcaNodePoly)
-		allTips <- tipNos[poly.tree$tip.label %in% allTaxa]
-
-		#find the original branching time of that node
-		theTime <- times[names(times)==mrcaNodeOrig]
-
-		#use the time to find actual x-coordinates
-		xCoord <- max(times)-theTime
-
-		#highly experimental way of finding the y-coordinate of the shift.
-		yCoord <- coords$yy[mrcaNodePoly]
+		else
+		{
+  		#figure out what the tip numbers are that correspond to those taxa in each tree
+  		theTipsOrig <- tipNos[orig.tree$tip.label %in% taxa]
+  		theTipsPoly <- tipNos[poly.tree$tip.label %in% taxa]
+  
+  		#find the mrca of those taxa in each tree
+  		mrcaNodeOrig <- getMRCA(orig.tree, taxa)
+  		mrcaNodePoly <- getMRCA(poly.tree, taxa)
+  		
+  		#find ALL taxa that descend from poly mrca	
+  		allTaxa <- tips(poly.tree, mrcaNodePoly)
+  		allTips <- tipNos[poly.tree$tip.label %in% allTaxa]
+  
+  		#find the original branching time of that node
+  		theTime <- times[names(times)==mrcaNodeOrig]
+  
+  		#use the time to find actual x-coordinates
+  		xCoord <- max(times)-theTime
+  
+  		#highly experimental way of finding the y-coordinate of the shift.
+  		yCoord <- coords$yy[mrcaNodePoly]
+		}
 
 		#put the point down
 		points(x=xCoord, y=yCoord, cex=pt.cex, col=absence.color, pch=20)

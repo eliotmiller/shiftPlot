@@ -64,18 +64,55 @@
 #' 
 #' saveMe <- trianglePlotter(polyTree, dropped, result, branchingResults, "red", "black", 0.05, 0.2)
 
-trianglePlotter <- function(tree, dropped.results, clade.table, branches, presence.color, absence.color, 
-	label.offset, text.cex)
+trianglePlotter <- function(tree, dropped.results, clade.table, branches, identifyShifts.obj,
+                            presence.color, absence.color, label.offset, text.cex, root.state)
 {
 	coords <- getCoords(tree)
 
+	#coords$xx <- coords$xx[-(1:length(tree$tip.label))]
+	#coords$yy <- coords$yy[-(1:length(tree$tip.label))]
+	
+	#print(coords)
+	
+	#figure out what the branch colors should be
+	if(root.state=="present")
+	{
+	  cols <- rep(presence.color, dim(tree$edge)[1])
+	}
+	
+	else if(root.state=="absent")
+	{
+	  cols <- rep(absence.color, dim(tree$edge)[1])
+	}
+	
+	else
+	{
+	  stop("root.state must be one of either present or absent")
+	}
+	
+	#set branches to the correct colors. i suspect this is too simplistic
+	#to just do one then the other, but try this for now. probably, there is some complicated
+	#nesting that can happen that needs to be anticipated, but seems to work for simplest
+	#cases
+	for(i in 1:length(identifyShifts.obj$losses))
+	{
+	  toChange <- which.edge(tree, unlist(identifyShifts.obj$losses[i]))
+	  cols[toChange] <- absence.color
+	}
+	
+	for(i in 1:length(identifyShifts.obj$gains))
+	{
+	  toChange <- which.edge(tree, unlist(identifyShifts.obj$gains[i]))
+	  cols[toChange] <- presence.color
+	}
+	
 	#plot the tree structure here. critically, this is going to plot the structure in black,
 	#including the tip segments. this might look weird, and it might be a good idea to suppress
 	#the plotting of tip segments, and/or customize the color of these segments
 	segments(y0=coords$yy[as.vector(t(tree$edge))],
 		y1=coords$yy[rep(tree$edge[,2],each=2)],
 		x0=coords$xx[rep(tree$edge[,1],each=2)],
-		x1=coords$xx[as.vector(t(tree$edge))], lwd=0.1)
+		x1=coords$xx[as.vector(t(tree$edge))], lwd=0.1, col=rep(cols,each=2))
 
 	#prep a table for the function below
 	groupsDF <- data.frame(species=unlist(dropped.results[[2]]),

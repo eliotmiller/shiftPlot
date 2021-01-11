@@ -4,7 +4,9 @@
 \name{Precur_res.corHMM}
 \alias{Precur_res.corHMM}
 \title{corHMM output.}
-\format{Standard corHMM output}
+\format{
+Standard corHMM output
+}
 \source{
 \url{https://github.com/thej022214/corHMM/}
 }

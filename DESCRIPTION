@@ -1,8 +1,8 @@
 Package: shiftPlot
 Title: Phylogenetic shift plotting
 Description: This package is intended to identify and plot the optimal way in which a phylogeny can be collapsed while still illustrating all relevant shift points in a binary trait.
-Version: 0.1
-Date: 2020-07-25
+Version: 0.2
+Date: 2021-01-11
 Author: Eliot Miller
 Maintainer: Eliot Miller <eliot.isaac@gmail.com>
 URL: https://github.com/eliotmiller/shiftPlot
@@ -15,4 +15,4 @@ Depends:
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0

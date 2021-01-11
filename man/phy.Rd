@@ -4,7 +4,9 @@
 \name{phy}
 \alias{phy}
 \title{A phylogeny in ape format.}
-\format{Newick format}
+\format{
+Newick format
+}
 \source{
 \url{https://github.com/thej022214/corHMM/}
 }

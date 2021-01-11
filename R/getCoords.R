@@ -15,7 +15,7 @@
 
 getCoords <- function(tree)
 {
-	plot(tree, show.tip.label=FALSE)
+	plot(tree, show.tip.label=FALSE, plot=FALSE)
 	coords <- get("last_plot.phylo", envir=.PlotPhyloEnv)
 	coords
 }
