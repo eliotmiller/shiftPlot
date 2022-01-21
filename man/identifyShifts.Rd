@@ -10,7 +10,7 @@ identifyShifts(tree, states.df, flip.tips)
 \item{tree}{Phylogeny in ape format, corresponding to states.df.}
 
 \item{states.df}{Data frame in the specified shiftPlot format. Should contain one
-column named "present", and a 0 or a 1 for every node in the phylogeny, with the tips
+column named "state", and number for every node in the phylogeny, with the tips
 above the internal nodes, and no row names. See details and examples.}
 
 \item{flip.tips}{Whether or not to flip tips such that they have the values of the
@@ -21,7 +21,7 @@ A list of lists, with gains and losses of the trait summarized by the node
 subtending the branch on which a shift was inferred to have occurred.
 }
 \description{
-Identify gains and losses in the trait by the node that subtends the branch a shift
+Identify shifts in the state of a trait by the node that subtends the branch a shift
 is inferred to have occurred on.
 }
 \details{

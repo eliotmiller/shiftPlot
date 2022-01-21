@@ -6,15 +6,14 @@
 \usage{
 trianglePlotter(
   tree,
+  states.df,
   dropped.results,
   clade.table,
   branches,
   identifyShifts.obj,
-  presence.color,
-  absence.color,
+  translation.table,
   label.offset,
-  text.cex,
-  root.state
+  text.cex
 )
 }
 \arguments{
@@ -38,16 +37,13 @@ of optimalCollapse.}
 
 \item{identifyShifts.obj}{Result of a call to identifyShifts.}
 
-\item{presence.color}{What color clades for which the trait is present should be colored.}
-
-\item{absence.color}{What color clades for which the trait is absent should be colored.}
-
 \item{label.offset}{How far away from the tips the clade name should be positioned.}
 
 \item{text.cex}{The size of the clade labels.}
 
-\item{root.state}{What the inferred state of the root is. Set to either "present" or
-"absent". In the future will make this be auto-detected.}
+\item{presence.color}{What color clades for which the trait is present should be colored.}
+
+\item{absence.color}{What color clades for which the trait is absent should be colored.}
 }
 \description{
 Use the optimal collapses to create a tree where triangles represent clades.

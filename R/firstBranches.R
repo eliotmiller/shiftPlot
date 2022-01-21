@@ -65,7 +65,7 @@ firstBranches <- function(tree, dropped.results, clade.table)
 		stringsAsFactors=FALSE)
 
 	#and merge in the clade states for another function further below
-	groupsDF <- merge(groupsDF, clade.table[,c("present","clade")], by.x="group", by.y="clade")
+	groupsDF <- merge(groupsDF, clade.table[,c("state","clade")], by.x="group", by.y="clade")
 
 	results <- c()
 	uniqueGroups <- unique(groupsDF$group)

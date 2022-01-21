@@ -55,6 +55,12 @@
 
 optimalCollapse <- function(tree, states.df, flip.tips)
 {
+  #add some checks to make sure input looks about right
+  if(dim(states.df)[1] != length(tree$tip.label) & dim(states.df)[2] != 1)
+  {
+    stop("Your input doesn't look right")
+  }
+  
 	#find the root node
 	rootNode <- length(tree$tip.label)+1
 
@@ -92,7 +98,7 @@ optimalCollapse <- function(tree, states.df, flip.tips)
 
 		#set aside this vector of states (it'll be only one state at first) for use in the
 		#while loop
-		allStates <- states.df$present[i]
+		allStates <- states.df$state[i]
 
 		#log which node you are considering (it's a tip at first but it'll update below)
 		node <- i
@@ -113,7 +119,7 @@ optimalCollapse <- function(tree, states.df, flip.tips)
 			allTips <- geiger::tips(tree, parentNode)
 
 			#pull the state data for all the tips that descend from parentNode
-			allStates <- states.df$present[states.df$species %in% allTips]
+			allStates <- states.df$state[states.df$species %in% allTips]
 
 			#if allStates are the same, and if parent node is greater than the root node,
 			#then set node and the placeholder to parent node, because we'll be starting
@@ -133,16 +139,12 @@ optimalCollapse <- function(tree, states.df, flip.tips)
 	#prep the object for export
 	temp <- unique(states.df$clade[states.df$clade != ""])
 	tempNodes <- as.numeric(unlist(lapply(strsplit(temp, "_"), "[", 2)))
-	prepped <- data.frame(node=tempNodes, present=0, collapse=1, clade=temp, stringsAsFactors=FALSE)
+	prepped <- data.frame(node=tempNodes, state=0, collapse=1, clade=temp, stringsAsFactors=FALSE)
 
 	#pull the state of each of these clades
 	for(i in 1:length(temp))
 	{
-		hold <- states.df$present[states.df$clade == temp[i]][1]
-		if(hold==1)
-		{
-			prepped$present[i] <- 1
-		}
+	  prepped$state[i] <- states.df$state[states.df$clade == temp[i]][1]
 	}
 
 	prepped

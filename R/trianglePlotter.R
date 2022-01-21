@@ -21,8 +21,6 @@
 #' @param absence.color What color clades for which the trait is absent should be colored.
 #' @param label.offset How far away from the tips the clade name should be positioned.
 #' @param text.cex The size of the clade labels.
-#' @param root.state What the inferred state of the root is. Set to either "present" or
-#' "absent". In the future will make this be auto-detected.
 #' 
 #' @details Should change the graphical parameters so there's more space for long clade names.
 #' Should not plot the tips. Should allow customization of edge colors. 
@@ -74,89 +72,125 @@
 #' root.state="present")
 #' 
 
-trianglePlotter <- function(tree, dropped.results, clade.table, branches, identifyShifts.obj,
-                            presence.color, absence.color, label.offset, text.cex, root.state)
+trianglePlotter <- function(tree, poly.tree, states.df, dropped.results, clade.table, branches,
+                            identifyShifts.obj, translation.table, label.offset, text.cex)
 {
-	coords <- getCoords(tree)
+	#set aside the coordinates
+  coords <- getCoords(poly.tree)
+  
+  #identify all shifts you need to change colors downstream of
+  allShifts <- as.numeric(unlist(lapply(identifyShifts.obj, names)))
 
-	#coords$xx <- coords$xx[-(1:length(tree$tip.label))]
-	#coords$yy <- coords$yy[-(1:length(tree$tip.label))]
-	
-	#print(coords)
-	
-	#figure out what the branch colors should be
-	if(root.state=="present")
-	{
-	  cols <- rep(presence.color, dim(tree$edge)[1])
-	}
-	
-	else if(root.state=="absent")
-	{
-	  cols <- rep(absence.color, dim(tree$edge)[1])
-	}
-	
-	else
-	{
-	  stop("root.state must be one of either present or absent")
-	}
-	
-	#set branches to the correct colors. i suspect this is too simplistic
-	#to just do one then the other, but try this for now. probably, there is some complicated
-	#nesting that can happen that needs to be anticipated, but seems to work for simplest
-	#cases. now adding a hack so that if root state is present it goes gains then losses,
-	#and if root is absent it goes losses then gain. i think maybe there'd have to be
-	#many sequential shifts in order to make this not work. still, would be good to tackle
-	#this head on
-	if(root.state=="present")
-	{
-  	for(i in 1:length(identifyShifts.obj$losses))
-  	{
-  	  toChange <- which.edge(tree, unlist(identifyShifts.obj$losses[i]))
-  	  cols[toChange] <- absence.color
-  	}
-  	
-  	for(i in 1:length(identifyShifts.obj$gains))
-  	{
-  	  toChange <- which.edge(tree, unlist(identifyShifts.obj$gains[i]))
-  	  cols[toChange] <- presence.color
-  	}
-	}
-	
-	else
-	{
-	  for(i in 1:length(identifyShifts.obj$gains))
-	  {
-	    toChange <- which.edge(tree, unlist(identifyShifts.obj$gains[i]))
-	    cols[toChange] <- presence.color
-	  }
+  #split out internal node shifts and tip shifts and handle each separately
+  internalShifts <- allShifts[allShifts > length(tree$tip.label)]
+  tipShifts <- allShifts[!(allShifts %in% internalShifts)]
+  
+  #map out the node matches between the main tree and poly tree
+  matches <- idMatches(tree, poly.tree, TRUE)
+  
+  #use this to convert the shifts to the relevant nodes in poly.tree. note that
+  #these only refer to internal nodes right now
+  internalShiftsPoly <- matches$tree2[matches$tree1 %in% allShifts]
+  
+  #create a color/state lookup table
+  shiftType <- c()
+  for(i in 1:length(identifyShifts.obj))
+  {
+    shiftType <- c(shiftType, rep(names(identifyShifts.obj)[i], length(identifyShifts.obj[[i]])))
+  }
 
-	  for(i in 1:length(identifyShifts.obj$losses))
-	  {
-	    toChange <- which.edge(tree, unlist(identifyShifts.obj$losses[i]))
-	    cols[toChange] <- absence.color
-	  }
+  #split and pull the state it changed to
+  toState <- strsplit(shiftType, "to")
+  
+  #pull second element and unlist
+  toState <- unlist(lapply(toState, "[", 2))
+  
+  #create table
+  lookup <- data.frame(node=allShifts, state=toState)
+  lookup <- merge(lookup, translation.table[,c("new","color")], by.x="state", by.y="new")
+  
+  #figure out what the tip numbers (nodes) in the poly tree are of the tips that had shifts
+  #as calculated on the real tree
+  tempVector <- 1:length(poly.tree$tip.label)
+  shiftSpp <- tree$tip.label[tipShifts]
+  inPoly <- tempVector[poly.tree$tip.label %in% shiftSpp]
+  
+  #create a quick data frame of these matches and bind onto previous internal node matches
+  matchedTips <- data.frame(tree1=tipShifts, tree2=inPoly)
+  matches <- rbind(matches, matchedTips)
+  
+  #merge in the poly nodes
+  lookup <- merge(lookup, matches, by.x="node", by.y="tree1")
+
+  #set aside the poly tip nodes for later
+  tipShiftsPoly <- lookup$tree2[!(lookup$tree2 %in% internalShiftsPoly)]
+  
+  #begin by coloring all the branches the designated color for the root state. 
+	#find root state then find color and rep
+	rootState <- states.df[(length(tree$tip.label)+1),"state"]
+	cols <- rep(translation.table$color[translation.table$new==rootState], dim(poly.tree$edge)[1])
+
+  #go into a for loop the length of internalShifts
+	for(i in 1:length(internalShiftsPoly))
+	{
+	  #find all the edges that connect back from the tips that descend from shift i
+    spp <- extract.clade(poly.tree, internalShiftsPoly[i])$tip.label
+    allEdges <- which.edge(poly.tree, spp)
+    
+    #find all nodes that descend from this internal node. even though tips is FALSE
+    #here, it also returns tip nodes
+    allNodes <- geiger:::.get.descendants.of.node(internalShiftsPoly[i], poly.tree, tips=FALSE)
+	    
+    #subset to any that are in internalShiftsPoly
+    allNodes <- allNodes[allNodes %in% internalShiftsPoly]
+    
+    #if there are any internal nodes with shifts that descend from this node, deal with them
+    if(length(allNodes) > 0)
+    {
+      #go into a for loop where you find the edges for each descendent node j that has a shift
+      #on it and discard those edges from allEdges
+      for(j in 1:length(allNodes))
+      {
+        tempSpp <- extract.clade(poly.tree, allNodes[j])$tip.label
+        tempEdges <- which.edge(poly.tree, tempSpp)
+        
+        #remove the edges you identified
+        allEdges <- allEdges[!(allEdges %in% tempEdges)]
+      }
+    }
+    
+    #figure out which color is relevant for this shift, and set the relevant edges to it
+    cols[allEdges] <- lookup$color[lookup$tree2==internalShiftsPoly[i]]
+	}
+
+	#go into a for loop for the tip shifts
+	for(i in 1:length(tipShiftsPoly))
+	{
+	  #find the edge for just that tip
+	  allEdges <- which.edge(poly.tree, poly.tree$tip.label[tipShiftsPoly[i]])
+	  cols[allEdges] <- lookup$color[lookup$tree2==tipShiftsPoly[i]]
 	}
 	
 	#plot the tree structure here. critically, this is going to plot the structure in black,
 	#including the tip segments. this might look weird, and it might be a good idea to suppress
 	#the plotting of tip segments, and/or customize the color of these segments
-	segments(y0=coords$yy[as.vector(t(tree$edge))],
-		y1=coords$yy[rep(tree$edge[,2],each=2)],
-		x0=coords$xx[rep(tree$edge[,1],each=2)],
-		x1=coords$xx[as.vector(t(tree$edge))], lwd=0.1, col=rep(cols,each=2))
-
+	segments(y0=coords$yy[as.vector(t(poly.tree$edge))],
+	         y1=coords$yy[rep(poly.tree$edge[,2],each=2)],
+	         x0=coords$xx[rep(poly.tree$edge[,1],each=2)],
+	         x1=coords$xx[as.vector(t(poly.tree$edge))], lwd=0.1, col=rep(cols,each=2))
+	
 	#prep a table for the function below
 	groupsDF <- data.frame(species=unlist(dropped.results[[2]]),
 		group=rep(dropped.results[[1]]$tip.label, unlist(lapply(dropped.results[[2]], length))),
 		stringsAsFactors=FALSE)
 
 	#and merge in the clade states for another function further below
-	groupsDF <- merge(groupsDF, clade.table[,c("present","clade")], by.x="group", by.y="clade")
+	groupsDF <- merge(groupsDF, clade.table[,c("state","clade")], by.x="group", by.y="clade")
 
 	uniqueGroups <- unique(groupsDF$group)
 
 	#figure out what the right hand x-points of the triangles will be
-	rightPoint <- max(ape::branching.times(tree))
+	rightPoint <- max(ape::branching.times(poly.tree))
 	
 	for(i in 1:length(uniqueGroups))
 	{
@@ -164,8 +198,8 @@ trianglePlotter <- function(tree, dropped.results, clade.table, branches, identi
 		taxa <- groupsDF$species[groupsDF$group==uniqueGroups[i]]
 
 		#identify the tips that belong to those taxa. create a little vector of tip numbers
-		tipNos <- 1:length(tree$tip.label)
-		theTips <- tipNos[tree$tip.label %in% taxa]
+		tipNos <- 1:length(poly.tree$tip.label)
+		theTips <- tipNos[poly.tree$tip.label %in% taxa]
 
 		#if this is NA, then there's only a single taxon, so don't plot a triangle but do label it
 		if(is.na(branches[i]))
@@ -183,16 +217,9 @@ trianglePlotter <- function(tree, dropped.results, clade.table, branches, identi
 		#find the left point
 		leftPoint <- rightPoint-branches[i]
 
-		#plot the triangle with the correct color
-		if(groupsDF$present[groupsDF$group==uniqueGroups[i]][1]==1)
-		{
-			polyColor <- presence.color
-		}
-
-		else
-		{
-			polyColor <- absence.color
-		}
+		#find the color the polygon should be
+		tempState <- unique(groupsDF$state[groupsDF$group==uniqueGroups[i]])
+		polyColor <- translation.table$color[translation.table$new==tempState]
 
 		polygon(x=c(leftPoint,rightPoint,rightPoint,leftPoint),
 			y=c(midPoint,lowPoint,highPoint,midPoint), col=polyColor, border=NA)

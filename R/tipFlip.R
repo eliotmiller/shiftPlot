@@ -5,7 +5,7 @@
 #'
 #' @param tree Phylogeny in ape format, corresponding to states.df.
 #' @param states.df Data frame in the specified shiftPlot format. Should contain one
-#' column named "present", and a 0 or a 1 for every node in the phylogeny, with the tips
+#' column named "state", and a number (state) for every node in the phylogeny, with the tips
 #' above the internal nodes, and no row names. See details and examples. 
 #' 
 #' @details states.df should have one column titled "present". This column should be
@@ -84,8 +84,7 @@ tipFlip <- function(tree, states.df)
 	results <- rbind(results, toBind)
 	results <- results[order(results$daughter.node),]
 	row.names(results) <- NULL
-	names(results) <- c("delete","present")
+	names(results) <- c("delete","state")
 	results$delete <- NULL
 	results
 }
-
