@@ -2,7 +2,7 @@
 #'
 #' Use the optimal collapses to create a tree where triangles represent clades.
 #'
-#' @param tree A phylogeny in ape format. This should be the polytomy tree, i.e. the
+#' @param orig.tree A phylogeny in ape format. This should be the polytomy tree, i.e. the
 #' result of a call to polytomyBind.
 #' @param dropped.results The result of a call to dropManyTips.
 #' @param clade.table Data frame with four columns: node, present (0/1), collapse (0/1),
@@ -72,8 +72,8 @@
 #' root.state="present")
 #' 
 
-trianglePlotter <- function(tree, poly.tree, states.df, dropped.results, clade.table, branches,
-                            identifyShifts.obj, translation.table, label.offset, text.cex)
+trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.results, clade.table, branches,
+                            identifyShifts.obj, translation.table, label.offset, text.cex, pt.cex)
 {
 	#set aside the coordinates
   coords <- getCoords(poly.tree)
@@ -82,11 +82,11 @@ trianglePlotter <- function(tree, poly.tree, states.df, dropped.results, clade.t
   allShifts <- as.numeric(unlist(lapply(identifyShifts.obj, names)))
 
   #split out internal node shifts and tip shifts and handle each separately
-  internalShifts <- allShifts[allShifts > length(tree$tip.label)]
+  internalShifts <- allShifts[allShifts > length(orig.tree$tip.label)]
   tipShifts <- allShifts[!(allShifts %in% internalShifts)]
   
   #map out the node matches between the main tree and poly tree
-  matches <- idMatches(tree, poly.tree, TRUE)
+  matches <- idMatches(orig.tree, poly.tree, TRUE)
   
   #use this to convert the shifts to the relevant nodes in poly.tree. note that
   #these only refer to internal nodes right now
@@ -112,7 +112,7 @@ trianglePlotter <- function(tree, poly.tree, states.df, dropped.results, clade.t
   #figure out what the tip numbers (nodes) in the poly tree are of the tips that had shifts
   #as calculated on the real tree
   tempVector <- 1:length(poly.tree$tip.label)
-  shiftSpp <- tree$tip.label[tipShifts]
+  shiftSpp <- orig.tree$tip.label[tipShifts]
   inPoly <- tempVector[poly.tree$tip.label %in% shiftSpp]
   
   #create a quick data frame of these matches and bind onto previous internal node matches
@@ -127,7 +127,7 @@ trianglePlotter <- function(tree, poly.tree, states.df, dropped.results, clade.t
   
   #begin by coloring all the branches the designated color for the root state. 
 	#find root state then find color and rep
-	rootState <- states.df[(length(tree$tip.label)+1),"state"]
+	rootState <- states.df[(length(orig.tree$tip.label)+1),"state"]
 	cols <- rep(translation.table$color[translation.table$new==rootState], dim(poly.tree$edge)[1])
 
   #go into a for loop the length of internalShifts
@@ -221,12 +221,55 @@ trianglePlotter <- function(tree, poly.tree, states.df, dropped.results, clade.t
 		tempState <- unique(groupsDF$state[groupsDF$group==uniqueGroups[i]])
 		polyColor <- translation.table$color[translation.table$new==tempState]
 
+		#unlist this shift object, but not recursively. see if any shifts correspond to the species
+		#defined in taxa. if so, then this is a state shift and you do want to add a point
+		unlisted <- unlist(shiftObj, recursive=FALSE)
+		if(any(unlist(lapply(unlisted, function(x) all.equal(taxa,x)))==TRUE))
+		{
+		  points(x=leftPoint, y=midPoint, pch=20, cex=pt.cex, col=polyColor)
+		}
+		
 		polygon(x=c(leftPoint,rightPoint,rightPoint,leftPoint),
 			y=c(midPoint,lowPoint,highPoint,midPoint), col=polyColor, border=NA)
 
 		text(groupsDF$group[groupsDF$group==uniqueGroups[i]][1], x=rightPoint+label.offset, y=midPoint,
 			adj=0, cex=text.cex)
 	}
+  
+	#go ahead and add the shift pts. first find all the branching times for the original tree
+	times <- ape::branching.times(poly.tree)
+	
+	#go through the tip shifts first
+	for(i in 1:length(tipShiftsPoly))
+	{
+	  xCoord <- max(times)
+	  yCoord <- coords$yy[tipShiftsPoly[i]]
+	  #points(x=xCoord, y=yCoord, pch=20, cex=pt.cex, col=lookup$color[lookup$tree2==tipShiftsPoly[i]])
+	}
+	
+	#go through the internal shifts next
+	for(i in 1:length(internalShiftsPoly))
+	{
+	  #find the original branching time of that node
+	  theTime <- times[names(times)==internalShiftsPoly[i]]
 
-	coords
+	  #use the time to find actual x-coordinates
+	  xCoord <- max(times)-theTime
+	  
+	  #pull the y coordinates for that shift
+	  yCoord <- coords$yy[internalShiftsPoly[i]]
+
+	  #if xCoord is within some (currently hard-coded) tolerance of the tips, do not
+	  #plot the shift, as it looks like a tip shift
+    if(all.equal(as.numeric(theTime), 0, tolerance=0.001)==TRUE)
+    {
+      
+      next()
+    }
+	  
+	  else
+	  {
+	    points(x=xCoord, y=yCoord, pch=20, cex=pt.cex, col=lookup$color[lookup$tree2==internalShiftsPoly[i]]) 
+	  }
+	}
 }

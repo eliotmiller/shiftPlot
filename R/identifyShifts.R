@@ -14,7 +14,11 @@
 #' coded either as a 0 or a 1, indicating the presence of the trait. states.df should have
 #' as many rows as there are nodes in phylogeny, and the tip nodes should come first in
 #' the data frame. For example, you might rbind the $tip.states and $states objects from
-#' a corHMM output together to create states.df
+#' a corHMM output together to create states.df. NOTE: I have seen some odd behavior with
+#' this function and suspect there is a bug somewhere where the shifts don't perfectly
+#' match to those from optimalCollapse, which seems to be accurate. Begs the question of
+#' why this function is needed at all. I will modify optimalCollapse to return the same
+#' output as this function and remove this function.
 #'
 #' @return A list of lists, with gains and losses of the trait summarized by the node
 #' subtending the branch on which a shift was inferred to have occurred. 
