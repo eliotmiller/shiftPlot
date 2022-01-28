@@ -4,10 +4,10 @@
 \alias{identifyShifts}
 \title{Identify shift points along the phylogeny in trait state}
 \usage{
-identifyShifts(tree, states.df, flip.tips)
+identifyShifts(orig.tree, states.df, flip.tips)
 }
 \arguments{
-\item{tree}{Phylogeny in ape format, corresponding to states.df.}
+\item{orig.tree}{Phylogeny in ape format, corresponding to states.df.}
 
 \item{states.df}{Data frame in the specified shiftPlot format. Should contain one
 column named "state", and number for every node in the phylogeny, with the tips
@@ -25,26 +25,32 @@ Identify shifts in the state of a trait by the node that subtends the branch a s
 is inferred to have occurred on.
 }
 \details{
-states.df should have one column titled "present". This column should be
-coded either as a 0 or a 1, indicating the presence of the trait. states.df should have
+states.df should have one column titled "state". This column should be
+take the form of a number, indicating the state of the trait. states.df should have
 as many rows as there are nodes in phylogeny, and the tip nodes should come first in
 the data frame. For example, you might rbind the $tip.states and $states objects from
-a corHMM output together to create states.df
+a corHMM output together to create states.df. In my experience, there are limited cases
+where the states of internal nodes do not match intuition after running marginal tip
+reconstruction in corHMM. The optimalCollapse function seem impermeable to these issues,
+but this function will detect these counterintuitive shifts in state. The trianglePlotter
+will warn if it detects any issues where shifts do not match between this function and
+a collapsed clade from optimalCollapse. If that is the case, users may wish to change
+the state of the internal nodes in question and re-run this function before proceeding.
 }
 \examples{
 #start with a corHMM output and build up a states.df
 #load data. these are the results of following the corHMM precursor model vignette
 data(Precur_res.corHMM)
 data(phy)
-nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 
 #note that tip states comes first here!
 states <- rbind(tipStates, nodeStates)
 
 #binarize this. choosing to call 0.5 chance of having trait present
-states$present[states$present >= 0.5] <- 1
-states$present[states$present < 0.5] <- 0
+states$state[states$state >= 0.5] <- 1
+states$state[states$state < 0.5] <- 0
 
 #flip node 103 and all nodes towards tips from there to trait = absent
 induced <- states
@@ -54,14 +60,8 @@ induced[103,] <- 0
 #get rid of row names
 row.names(induced) <- NULL
 
-#try running the function
-result <- identifyShifts(phy, induced, FALSE)
-result
-tipsInQ <- tips(phy, 103)
-states[tipsInQ,] <- 0
-row.names(states) <- NULL
-result <- identifyShifts(phy, states, TRUE)
-result
+#run the function and don't flip those tips
+shiftObj <- identifyShifts(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 }
 \author{
 Eliot Miller

@@ -2,7 +2,7 @@
 #'
 #' Optimal collapse
 #'
-#' @param tree Phylogeny in ape format, corresponding to states.df.
+#' @param orig.tree Phylogeny in ape format, corresponding to states.df.
 #' @param states.df Data frame in the specified shiftPlot format. Should contain one
 #' column named "present", and a 0 or a 1 for every node in the phylogeny, with the tips
 #' above the internal nodes, and no row names. See details and examples. 
@@ -32,15 +32,15 @@
 #' #load data. these are the results of following the corHMM precursor model vignette
 #' data(Precur_res.corHMM)
 #' data(phy)
-#' nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-#' tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+#' nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+#' tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 #'
 #' #note that tip states comes first here!
 #' states <- rbind(tipStates, nodeStates)
 #' 
 #' #binarize this. choosing to call 0.5 chance of having trait present
-#' states$present[states$present >= 0.5] <- 1
-#' states$present[states$present < 0.5] <- 0
+#' states$state[states$state >= 0.5] <- 1
+#' states$state[states$state < 0.5] <- 0
 #' 
 #' #flip node 103 and all nodes towards tips from there to trait = absent
 #' induced <- states
@@ -51,42 +51,42 @@
 #' row.names(induced) <- NULL
 #' 
 #' #run the function and don't flip those tips
-#' result <- optimalCollapse(phy, induced, FALSE)
+#' ocResult <- optimalCollapse(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 
-optimalCollapse <- function(tree, states.df, flip.tips)
+optimalCollapse <- function(orig.tree, states.df, flip.tips)
 {
   #add some checks to make sure input looks about right
-  if(dim(states.df)[1] != length(tree$tip.label) & dim(states.df)[2] != 1)
+  if(dim(states.df)[1] != length(orig.tree$tip.label) & dim(states.df)[2] != 1)
   {
     stop("Your input doesn't look right")
   }
   
 	#find the root node
-	rootNode <- length(tree$tip.label)+1
+	rootNode <- length(orig.tree$tip.label)+1
 
 	if(flip.tips==TRUE)
 	{
-		states.df <- tipFlip(tree, states.df)
+		states.df <- tipFlip(orig.tree, states.df)
 	}
 	
 	#now create a node column for simplicity sake
 	states.df$node <- row.names(states.df)
 
 	#and a species col for simplicity sake (leave it blank for internal nodes)
-	states.df$species <- c(tree$tip.label, rep("", dim(states.df)[1]-length(tree$tip.label)))
+	states.df$species <- c(orig.tree$tip.label, rep("", dim(states.df)[1]-length(orig.tree$tip.label)))
 
 	#also set up a clade column in the states table
 	states.df$clade <- ""
 
 	#create a table like the identifyShifts fxn, but use differently
-	shifts <- data.frame(tree$edge)
+	shifts <- data.frame(orig.tree$edge)
 	names(shifts) <- c("parent.node","daughter.node")
 
 	#start at the first tip, bump down to the parent node, figure out all the taxa that
 	#descend from that node, and figure out their states. if they are all the same, bump
 	#one node further towards the root. if the states aren't all the same, go back up and
 	#log that parent node as one you can collapse.
-	for(i in 1:length(tree$tip.label))
+	for(i in 1:length(orig.tree$tip.label))
 	{
 		#this way as you log what taxa you can collapse, you can skip ahead to the next
 		#clade you'll need to deal with (and not have to solve for all the other taxa in
@@ -116,7 +116,7 @@ optimalCollapse <- function(tree, states.df, flip.tips)
 			parentNode <- shifts$parent.node[shifts$daughter.node==node]
 
 			#find all the tips that descend from the parent node
-			allTips <- geiger::tips(tree, parentNode)
+			allTips <- geiger::tips(orig.tree, parentNode)
 
 			#pull the state data for all the tips that descend from parentNode
 			allStates <- states.df$state[states.df$species %in% allTips]
@@ -132,7 +132,7 @@ optimalCollapse <- function(tree, states.df, flip.tips)
 		}
 
 		#if the while loop worked, then all tips descending from node should be able to be collapsed.
-		allTips <- geiger::tips(tree, node)
+		allTips <- geiger::tips(orig.tree, node)
 		states.df$clade[states.df$species %in% allTips] <- paste("node", node, sep="_")
 	}
 

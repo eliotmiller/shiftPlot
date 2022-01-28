@@ -3,22 +3,24 @@
 #' Identify shifts in the state of a trait by the node that subtends the branch a shift
 #' is inferred to have occurred on.
 #'
-#' @param tree Phylogeny in ape format, corresponding to states.df.
+#' @param orig.tree Phylogeny in ape format, corresponding to states.df.
 #' @param states.df Data frame in the specified shiftPlot format. Should contain one
 #' column named "state", and number for every node in the phylogeny, with the tips
 #' above the internal nodes, and no row names. See details and examples. 
 #' @param flip.tips Whether or not to flip tips such that they have the values of the
 #' parent node. This will preclude shifts being detected on branches leading to tips. 
 #' 
-#' @details states.df should have one column titled "present". This column should be
-#' coded either as a 0 or a 1, indicating the presence of the trait. states.df should have
+#' @details states.df should have one column titled "state". This column should be
+#' take the form of a number, indicating the state of the trait. states.df should have
 #' as many rows as there are nodes in phylogeny, and the tip nodes should come first in
 #' the data frame. For example, you might rbind the $tip.states and $states objects from
-#' a corHMM output together to create states.df. NOTE: I have seen some odd behavior with
-#' this function and suspect there is a bug somewhere where the shifts don't perfectly
-#' match to those from optimalCollapse, which seems to be accurate. Begs the question of
-#' why this function is needed at all. I will modify optimalCollapse to return the same
-#' output as this function and remove this function.
+#' a corHMM output together to create states.df. In my experience, there are limited cases
+#' where the states of internal nodes do not match intuition after running marginal tip
+#' reconstruction in corHMM. The optimalCollapse function seem impermeable to these issues,
+#' but this function will detect these counterintuitive shifts in state. The trianglePlotter
+#' will warn if it detects any issues where shifts do not match between this function and
+#' a collapsed clade from optimalCollapse. If that is the case, users may wish to change
+#' the state of the internal nodes in question and re-run this function before proceeding.
 #'
 #' @return A list of lists, with gains and losses of the trait summarized by the node
 #' subtending the branch on which a shift was inferred to have occurred. 
@@ -32,15 +34,15 @@
 #' #load data. these are the results of following the corHMM precursor model vignette
 #' data(Precur_res.corHMM)
 #' data(phy)
-#' nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-#' tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+#' nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+#' tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 #'
 #' #note that tip states comes first here!
 #' states <- rbind(tipStates, nodeStates)
 #' 
 #' #binarize this. choosing to call 0.5 chance of having trait present
-#' states$present[states$present >= 0.5] <- 1
-#' states$present[states$present < 0.5] <- 0
+#' states$state[states$state >= 0.5] <- 1
+#' states$state[states$state < 0.5] <- 0
 #' 
 #' #flip node 103 and all nodes towards tips from there to trait = absent
 #' induced <- states
@@ -50,33 +52,27 @@
 #' #get rid of row names
 #' row.names(induced) <- NULL
 #' 
-#' #try running the function
-#' result <- identifyShifts(phy, induced, FALSE)
-#' result
-#' tipsInQ <- tips(phy, 103)
-#' states[tipsInQ,] <- 0
-#' row.names(states) <- NULL
-#' result <- identifyShifts(phy, states, TRUE)
-#' result
+#' #run the function and don't flip those tips
+#' shiftObj <- identifyShifts(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 
-identifyShifts <- function(tree, states.df, flip.tips)
+identifyShifts <- function(orig.tree, states.df, flip.tips)
 {
   #add some checks to make sure input looks about right
-  if(dim(states.df)[1] != length(tree$tip.label) & dim(states.df)[2] != 1)
+  if(dim(states.df)[1] != length(orig.tree$tip.label) & dim(states.df)[2] != 1)
   {
     stop("Your input doesn't look right")
   }
   
   if(flip.tips==TRUE)
 	{
-		states.df <- tipFlip(tree, states.df)
+		states.df <- tipFlip(orig.tree, states.df)
 	}
 
 	#create a node column for simplicity sake
 	states.df$node <- row.names(states.df)
 
 	#create a shifts object
-	shifts <- data.frame(tree$edge)
+	shifts <- data.frame(orig.tree$edge)
 	names(shifts) <- c("parent.node","daughter.node")
 	
 	#merge in the state data with the parent node and rename for ease
@@ -125,7 +121,7 @@ identifyShifts <- function(tree, states.df, flip.tips)
 	  #this nested part will pull the taxa that descend each node in tempNodes
 	  for(j in 1:length(tempNodes))
 	  {
-	    temp[[j]] <- geiger::tips(tree, tempNodes[j])
+	    temp[[j]] <- geiger::tips(orig.tree, tempNodes[j])
 	  }
 	  
 	  #set the names to reflect the node in question

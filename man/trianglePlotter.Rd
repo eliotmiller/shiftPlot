@@ -5,24 +5,32 @@
 \title{Plot a phylogeny with triangles representing clades}
 \usage{
 trianglePlotter(
-  tree,
+  orig.tree,
+  poly.tree,
   states.df,
-  dropped.results,
-  clade.table,
+  dropped.result,
+  oc.result,
   branches,
-  identifyShifts.obj,
+  is.result,
   translation.table,
   label.offset,
-  text.cex
+  text.cex,
+  pt.cex
 )
 }
 \arguments{
-\item{tree}{A phylogeny in ape format. This should be the polytomy tree, i.e. the
+\item{orig.tree}{A phylogeny in ape format. This should be the original tree.}
+
+\item{poly.tree}{A phylogeny in ape format. This should be the polytomy tree, i.e. the
 result of a call to polytomyBind.}
 
-\item{dropped.results}{The result of a call to dropManyTips.}
+\item{states.df}{Data frame in the specified shiftPlot format. Should contain one
+column named "state", and number for every node in the phylogeny, with the tips
+above the internal nodes, and no row names. See details and examples.}
 
-\item{clade.table}{Data frame with four columns: node, present (0/1), collapse (0/1),
+\item{dropped.result}{The result of a call to dropManyTips.}
+
+\item{oc.result}{Data frame with four columns: node, present (0/1), collapse (0/1),
 and clade. Node provides values indicating which nodes you will collapse (all nodes
 tipwards from the indicated node will be collapsed). Present indicates whether the
 tips being collapsed do or do not have the trait in question (I think this column is
@@ -30,20 +38,23 @@ not actually used and can be skipped). Collapse indicates whether to actually co
 that node or not (allowing a user to manually override the results from optimalCollapse).
 Clade provides a character string which will be used to rename the collapsed clade.
 Initially, this is given a generic name based on the node being collapsed, but these can
-be replaced with a name of the user's choosing. This input (clade.table) is the output
+be replaced with a name of the user's choosing. This input (oc.result) is the output
 of optimalCollapse.}
 
 \item{branches}{Result of a call to firstBranches.}
 
-\item{identifyShifts.obj}{Result of a call to identifyShifts.}
+\item{is.result}{Result of a call to identifyShifts.}
+
+\item{translation.table}{A data frame with the following three columns: orig, the original
+names of the states, e.g. "present" or "1,R1"; new, numbers used as shorthand to refer back
+to these original state names; color, the name of the color to use in the plot to indicate
+that trait state.}
 
 \item{label.offset}{How far away from the tips the clade name should be positioned.}
 
 \item{text.cex}{The size of the clade labels.}
 
-\item{presence.color}{What color clades for which the trait is present should be colored.}
-
-\item{absence.color}{What color clades for which the trait is absent should be colored.}
+\item{pt.cex}{The size of the dots used to indicate shifts. Set to 0 to suppress points.}
 }
 \description{
 Use the optimal collapses to create a tree where triangles represent clades.
@@ -57,15 +68,15 @@ Should not plot the tips. Should allow customization of edge colors.
 #load data. these are the results of following the corHMM precursor model vignette
 data(Precur_res.corHMM)
 data(phy)
-nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 
 #note that tip states comes first here!
 states <- rbind(tipStates, nodeStates)
 
 #binarize this. choosing to call 0.5 chance of having trait present
-states$present[states$present >= 0.5] <- 1
-states$present[states$present < 0.5] <- 0
+states$state[states$state >= 0.5] <- 1
+states$state[states$state < 0.5] <- 0
 
 #flip node 103 and all nodes towards tips from there to trait = absent
 induced <- states
@@ -75,25 +86,29 @@ induced[103,] <- 0
 #get rid of row names
 row.names(induced) <- NULL
 
-#find the optimal collapse configuration
-collapsed <- optimalCollapse(phy, induced, FALSE)
+#run the function and don't flip those tips
+ocResult <- optimalCollapse(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 
-shifts <- identifyShifts(phy, induced, FALSE)
+#run the dropManyTips fxn
+dropped <- dropManyTips(orig.tree=phy, oc.result=ocResult)
 
-#collapse the tree
-dropped <- dropManyTips(phy, collapsed)
+#run the polytomyBind function
+polyTree <- polytomyBind(dropped.result=dropped, oc.result=ocResult)
 
-#use the polytomyBind function
-polyTree <- polytomyBind(dropped, collapsed)
+#run the firstBranches fxn
+branches <- firstBranches(orig.tree=phy, dropped.result=dropped, oc.result=ocResult)
 
-branchingResults <- firstBranches(phy, dropped, collapsed)
+#run the function and don't flip those tips
+is.result <- identifyShifts(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 
-saveMe <- trianglePlotter(tree=polyTree, dropped.results=dropped, clade.table=collapsed,
-branches=branchingResults, identifyShifts.obj=shifts,
-presence.color="red", absence.color="black",
-label.offset=0.3, text.cex=0.09,
-root.state="present")
+#create a color, state, and state name translation table
+translationTable <- data.frame(orig=c("absent","present"), new=c(0,1), color=c("black","red"))
 
+#make the triangle plot
+trianglePlotter(orig.tree=phy, poly.tree=polyTree, dropped.result=dropped,
+oc.result=ocResult, branches=branches, is.result=is.result,
+label.offset=0.3, text.cex=0.09, translation.table=translationTable,
+states.df=states, pt.cex=2)
 }
 \author{
 Eliot Miller and Bruce Martin

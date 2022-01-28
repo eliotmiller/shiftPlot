@@ -4,10 +4,10 @@
 \alias{tipFlip}
 \title{Flip tips to have the states of their parent nodes}
 \usage{
-tipFlip(tree, states.df)
+tipFlip(orig.tree, states.df)
 }
 \arguments{
-\item{tree}{Phylogeny in ape format, corresponding to states.df.}
+\item{orig.tree}{Phylogeny in ape format, corresponding to states.df.}
 
 \item{states.df}{Data frame in the specified shiftPlot format. Should contain one
 column named "state", and a number (state) for every node in the phylogeny, with the tips
@@ -36,15 +36,15 @@ be that it appeared there were many shifts in the hidden trait towards the tips.
 #load data. these are the results of following the corHMM precursor model vignette
 data(Precur_res.corHMM)
 data(phy)
-nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 
 #note that tip states comes first here!
 states <- rbind(tipStates, nodeStates)
 
 #binarize this. choosing to call 0.5 chance of having trait present
-states$present[states$present >= 0.5] <- 1
-states$present[states$present < 0.5] <- 0
+states$state[states$state >= 0.5] <- 1
+states$state[states$state < 0.5] <- 0
 
 #make the model a little more exciting (all tips were origianlly
 #inferred to have the hidden precursor trait)
@@ -55,7 +55,7 @@ states[tipsInQ,] <- 0
 row.names(states) <- NULL
 
 #try running the function
-result <- tipFlip(phy, states)
+result <- tipFlip(orig.tree=phy, states.df=states)
 }
 \author{
 Eliot Miller

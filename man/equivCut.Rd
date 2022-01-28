@@ -4,14 +4,14 @@
 \alias{equivCut}
 \title{Drop duplicated matched nodes}
 \usage{
-equivCut(tree1, tree2, results, least.inclusive)
+equivCut(tree1, tree2, id.results, least.inclusive)
 }
 \arguments{
 \item{tree1}{The first tree.}
 
 \item{tree2}{The second tree.}
 
-\item{results}{Results from a run of the idMatches function.}
+\item{id.results}{Results from a run of the idMatches function.}
 
 \item{least.inclusive}{Do you want to keep the smallest or largest set of
 matched taxa. See details.}

@@ -3,7 +3,7 @@
 #' Ensure tips have the same states as their parent nodes, to preclude shifts on terminal
 #' branches.
 #'
-#' @param tree Phylogeny in ape format, corresponding to states.df.
+#' @param orig.tree Phylogeny in ape format, corresponding to states.df.
 #' @param states.df Data frame in the specified shiftPlot format. Should contain one
 #' column named "state", and a number (state) for every node in the phylogeny, with the tips
 #' above the internal nodes, and no row names. See details and examples. 
@@ -29,15 +29,15 @@
 #' #load data. these are the results of following the corHMM precursor model vignette
 #' data(Precur_res.corHMM)
 #' data(phy)
-#' nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-#' tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+#' nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+#' tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 #'
 #' #note that tip states comes first here!
 #' states <- rbind(tipStates, nodeStates)
 #' 
 #' #binarize this. choosing to call 0.5 chance of having trait present
-#' states$present[states$present >= 0.5] <- 1
-#' states$present[states$present < 0.5] <- 0
+#' states$state[states$state >= 0.5] <- 1
+#' states$state[states$state < 0.5] <- 0
 #' 
 #' #make the model a little more exciting (all tips were origianlly
 #' #inferred to have the hidden precursor trait)
@@ -48,15 +48,15 @@
 #' row.names(states) <- NULL
 #' 
 #' #try running the function
-#' result <- tipFlip(phy, states)
+#' result <- tipFlip(orig.tree=phy, states.df=states)
 
-tipFlip <- function(tree, states.df)
+tipFlip <- function(orig.tree, states.df)
 {
 	#create a node column for simplicity sake
 	states.df$node <- row.names(states.df)
 
 	#create a shifts object
-	shifts <- data.frame(tree$edge)
+	shifts <- data.frame(orig.tree$edge)
 	names(shifts) <- c("parent.node","daughter.node")
 	
 	#merge in the state data with the parent node and rename for ease
@@ -71,7 +71,7 @@ tipFlip <- function(tree, states.df)
 	shifts3 <- shifts3[,c("parent.node","daughter.node","parent.state","daughter.state")]
 
 	#set all the daughter.states of the tips to those of their parents
-	tipNos <- 1:length(tree$tip.label)
+	tipNos <- 1:length(orig.tree$tip.label)
 	shifts3$daughter.state[shifts3$daughter.node %in% tipNos] <- shifts3$parent.state[shifts3$daughter.node %in% tipNos]
 
 	#recreate the states.df in the binarized form and return

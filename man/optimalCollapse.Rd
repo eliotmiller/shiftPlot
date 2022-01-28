@@ -4,10 +4,10 @@
 \alias{optimalCollapse}
 \title{Determine which clades can be collapsed}
 \usage{
-optimalCollapse(tree, states.df, flip.tips)
+optimalCollapse(orig.tree, states.df, flip.tips)
 }
 \arguments{
-\item{tree}{Phylogeny in ape format, corresponding to states.df.}
+\item{orig.tree}{Phylogeny in ape format, corresponding to states.df.}
 
 \item{states.df}{Data frame in the specified shiftPlot format. Should contain one
 column named "present", and a 0 or a 1 for every node in the phylogeny, with the tips
@@ -37,15 +37,15 @@ be that it appeared there were many shifts in the hidden trait towards the tips.
 #load data. these are the results of following the corHMM precursor model vignette
 data(Precur_res.corHMM)
 data(phy)
-nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 
 #note that tip states comes first here!
 states <- rbind(tipStates, nodeStates)
 
 #binarize this. choosing to call 0.5 chance of having trait present
-states$present[states$present >= 0.5] <- 1
-states$present[states$present < 0.5] <- 0
+states$state[states$state >= 0.5] <- 1
+states$state[states$state < 0.5] <- 0
 
 #flip node 103 and all nodes towards tips from there to trait = absent
 induced <- states
@@ -56,7 +56,7 @@ induced[103,] <- 0
 row.names(induced) <- NULL
 
 #run the function and don't flip those tips
-result <- optimalCollapse(phy, induced, FALSE)
+ocResult <- optimalCollapse(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 }
 \author{
 Eliot Miller

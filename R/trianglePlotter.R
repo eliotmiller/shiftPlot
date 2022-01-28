@@ -2,10 +2,14 @@
 #'
 #' Use the optimal collapses to create a tree where triangles represent clades.
 #'
-#' @param orig.tree A phylogeny in ape format. This should be the polytomy tree, i.e. the
+#' @param orig.tree A phylogeny in ape format. This should be the original tree.
+#' @param poly.tree A phylogeny in ape format. This should be the polytomy tree, i.e. the
 #' result of a call to polytomyBind.
-#' @param dropped.results The result of a call to dropManyTips.
-#' @param clade.table Data frame with four columns: node, present (0/1), collapse (0/1),
+#' @param states.df Data frame in the specified shiftPlot format. Should contain one
+#' column named "state", and number for every node in the phylogeny, with the tips
+#' above the internal nodes, and no row names. See details and examples. 
+#' @param dropped.result The result of a call to dropManyTips.
+#' @param oc.result Data frame with four columns: node, present (0/1), collapse (0/1),
 #' and clade. Node provides values indicating which nodes you will collapse (all nodes
 #' tipwards from the indicated node will be collapsed). Present indicates whether the
 #' tips being collapsed do or do not have the trait in question (I think this column is
@@ -13,14 +17,17 @@
 #' that node or not (allowing a user to manually override the results from optimalCollapse).
 #' Clade provides a character string which will be used to rename the collapsed clade.
 #' Initially, this is given a generic name based on the node being collapsed, but these can
-#' be replaced with a name of the user's choosing. This input (clade.table) is the output
+#' be replaced with a name of the user's choosing. This input (oc.result) is the output
 #' of optimalCollapse.
 #' @param branches Result of a call to firstBranches.
-#' @param identifyShifts.obj Result of a call to identifyShifts.
-#' @param presence.color What color clades for which the trait is present should be colored.
-#' @param absence.color What color clades for which the trait is absent should be colored.
+#' @param is.result Result of a call to identifyShifts.
+#' @param translation.table A data frame with the following three columns: orig, the original
+#' names of the states, e.g. "present" or "1,R1"; new, numbers used as shorthand to refer back
+#' to these original state names; color, the name of the color to use in the plot to indicate
+#' that trait state.
 #' @param label.offset How far away from the tips the clade name should be positioned.
 #' @param text.cex The size of the clade labels.
+#' @param pt.cex The size of the dots used to indicate shifts. Set to 0 to suppress points.
 #' 
 #' @details Should change the graphical parameters so there's more space for long clade names.
 #' Should not plot the tips. Should allow customization of edge colors. 
@@ -34,15 +41,15 @@
 #' #load data. these are the results of following the corHMM precursor model vignette
 #' data(Precur_res.corHMM)
 #' data(phy)
-#' nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-#' tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+#' nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+#' tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 #'
 #' #note that tip states comes first here!
 #' states <- rbind(tipStates, nodeStates)
 #' 
 #' #binarize this. choosing to call 0.5 chance of having trait present
-#' states$present[states$present >= 0.5] <- 1
-#' states$present[states$present < 0.5] <- 0
+#' states$state[states$state >= 0.5] <- 1
+#' states$state[states$state < 0.5] <- 0
 #' 
 #' #flip node 103 and all nodes towards tips from there to trait = absent
 #' induced <- states
@@ -52,34 +59,38 @@
 #' #get rid of row names
 #' row.names(induced) <- NULL
 #' 
-#' #find the optimal collapse configuration
-#' collapsed <- optimalCollapse(phy, induced, FALSE)
+#' #run the function and don't flip those tips
+#' ocResult <- optimalCollapse(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 #' 
-#' shifts <- identifyShifts(phy, induced, FALSE)
+#' #run the dropManyTips fxn
+#' dropped <- dropManyTips(orig.tree=phy, oc.result=ocResult)
 #' 
-#' #collapse the tree
-#' dropped <- dropManyTips(phy, collapsed)
+#' #run the polytomyBind function
+#' polyTree <- polytomyBind(dropped.result=dropped, oc.result=ocResult)
 #' 
-#' #use the polytomyBind function
-#' polyTree <- polytomyBind(dropped, collapsed)
+#' #run the firstBranches fxn
+#' branches <- firstBranches(orig.tree=phy, dropped.result=dropped, oc.result=ocResult)
 #' 
-#' branchingResults <- firstBranches(phy, dropped, collapsed)
+#' #run the function and don't flip those tips
+#' is.result <- identifyShifts(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 #' 
-#' saveMe <- trianglePlotter(tree=polyTree, dropped.results=dropped, clade.table=collapsed,
-#' branches=branchingResults, identifyShifts.obj=shifts,
-#' presence.color="red", absence.color="black",
-#' label.offset=0.3, text.cex=0.09,
-#' root.state="present")
+#' #create a color, state, and state name translation table
+#' translationTable <- data.frame(orig=c("absent","present"), new=c(0,1), color=c("black","red"))
 #' 
+#' #make the triangle plot
+#' trianglePlotter(orig.tree=phy, poly.tree=polyTree, dropped.result=dropped,
+#' oc.result=ocResult, branches=branches, is.result=is.result,
+#' label.offset=0.3, text.cex=0.09, translation.table=translationTable,
+#' states.df=states, pt.cex=2)
 
-trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.results, clade.table, branches,
-                            identifyShifts.obj, translation.table, label.offset, text.cex, pt.cex)
+trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.result, branches,
+                            is.result, translation.table, label.offset, text.cex, pt.cex)
 {
 	#set aside the coordinates
   coords <- getCoords(poly.tree)
   
   #identify all shifts you need to change colors downstream of
-  allShifts <- as.numeric(unlist(lapply(identifyShifts.obj, names)))
+  allShifts <- as.numeric(unlist(lapply(is.result, names)))
 
   #split out internal node shifts and tip shifts and handle each separately
   internalShifts <- allShifts[allShifts > length(orig.tree$tip.label)]
@@ -94,9 +105,9 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.results, cl
   
   #create a color/state lookup table
   shiftType <- c()
-  for(i in 1:length(identifyShifts.obj))
+  for(i in 1:length(is.result))
   {
-    shiftType <- c(shiftType, rep(names(identifyShifts.obj)[i], length(identifyShifts.obj[[i]])))
+    shiftType <- c(shiftType, rep(names(is.result)[i], length(is.result[[i]])))
   }
 
   #split and pull the state it changed to
@@ -122,6 +133,15 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.results, cl
   #merge in the poly nodes
   lookup <- merge(lookup, matches, by.x="node", by.y="tree1")
 
+  #there can be funny business between identify shift results and the optimal collapse
+  #results that I think has to do with marginal tip reconstruction, probably. look for
+  #situations where certain shifts found do not match up
+  if(length(allShifts) != dim(lookup)[1])
+  {
+    warning("Consider changing the inferred states of these nodes (or their parents) from the original tree. To do so, change in states.df and re-run identifyShifts")
+    print(setdiff(allShifts, lookup$node))
+  }
+  
   #set aside the poly tip nodes for later
   tipShiftsPoly <- lookup$tree2[!(lookup$tree2 %in% internalShiftsPoly)]
   
@@ -180,12 +200,12 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.results, cl
 	         x1=coords$xx[as.vector(t(poly.tree$edge))], lwd=0.1, col=rep(cols,each=2))
 	
 	#prep a table for the function below
-	groupsDF <- data.frame(species=unlist(dropped.results[[2]]),
-		group=rep(dropped.results[[1]]$tip.label, unlist(lapply(dropped.results[[2]], length))),
+	groupsDF <- data.frame(species=unlist(dropped.result[[2]]),
+		group=rep(dropped.result[[1]]$tip.label, unlist(lapply(dropped.result[[2]], length))),
 		stringsAsFactors=FALSE)
 
 	#and merge in the clade states for another function further below
-	groupsDF <- merge(groupsDF, clade.table[,c("state","clade")], by.x="group", by.y="clade")
+	groupsDF <- merge(groupsDF, oc.result[,c("state","clade")], by.x="group", by.y="clade")
 
 	uniqueGroups <- unique(groupsDF$group)
 
@@ -223,7 +243,7 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.results, cl
 
 		#unlist this shift object, but not recursively. see if any shifts correspond to the species
 		#defined in taxa. if so, then this is a state shift and you do want to add a point
-		unlisted <- unlist(shiftObj, recursive=FALSE)
+		unlisted <- unlist(is.result, recursive=FALSE)
 		if(any(unlist(lapply(unlisted, function(x) all.equal(taxa,x)))==TRUE))
 		{
 		  points(x=leftPoint, y=midPoint, pch=20, cex=pt.cex, col=polyColor)

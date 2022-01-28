@@ -2,8 +2,8 @@
 #'
 #' Collapse a phylogeny by node and rename according to a clade table.
 #'
-#' @param dropped.results The result of a call to dropManyTips.
-#' @param clade.table Data frame with four columns: node, present (0/1), collapse (0/1),
+#' @param dropped.result The result of a call to dropManyTips.
+#' @param oc.result Data frame with four columns: node, present (0/1), collapse (0/1),
 #' and clade. Node provides values indicating which nodes you will collapse (all nodes
 #' tipwards from the indicated node will be collapsed). Present indicates whether the
 #' tips being collapsed do or do not have the trait in question (I think this column is
@@ -11,7 +11,7 @@
 #' that node or not (allowing a user to manually override the results from optimalCollapse).
 #' Clade provides a character string which will be used to rename the collapsed clade.
 #' Initially, this is given a generic name based on the node being collapsed, but these can
-#' be replaced with a name of the user's choosing. This input (clade.table) is the output
+#' be replaced with a name of the user's choosing. This input (oc.result) is the output
 #' of optimalCollapse.
 #' 
 #' @details Stuff.
@@ -27,15 +27,15 @@
 #' #load data. these are the results of following the corHMM precursor model vignette
 #' data(Precur_res.corHMM)
 #' data(phy)
-#' nodeStates <- data.frame(present=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
-#' tipStates <- data.frame(present=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
+#' nodeStates <- data.frame(state=Precur_res.corHMM$states[,3]+Precur_res.corHMM$states[,4])
+#' tipStates <- data.frame(state=Precur_res.corHMM$tip.states[,3]+Precur_res.corHMM$tip.states[,4])
 #'
 #' #note that tip states comes first here!
 #' states <- rbind(tipStates, nodeStates)
 #' 
 #' #binarize this. choosing to call 0.5 chance of having trait present
-#' states$present[states$present >= 0.5] <- 1
-#' states$present[states$present < 0.5] <- 0
+#' states$state[states$state >= 0.5] <- 1
+#' states$state[states$state < 0.5] <- 0
 #' 
 #' #flip node 103 and all nodes towards tips from there to trait = absent
 #' induced <- states
@@ -45,29 +45,29 @@
 #' #get rid of row names
 #' row.names(induced) <- NULL
 #' 
-#' #find the optimal collapse configuration
-#' result <- optimalCollapse(phy, induced, FALSE)
+#' #run the function and don't flip those tips
+#' ocResult <- optimalCollapse(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 #' 
-#' #collapse the tree
-#' dropped <- dropManyTips(phy, result)
+#' #run the dropManyTips fxn
+#' dropped <- dropManyTips(orig.tree=phy, oc.result=ocResult)
 #' 
-#' #use the polytomyBind function
-#' polyTree <- polytomyBind(dropped, result)
+#' #run the polytomyBind function
+#' polyTree <- polytomyBind(dropped.result=dropped, oc.result=ocResult)
 
-polytomyBind <- function(dropped.results, clade.table)
+polytomyBind <- function(dropped.result, oc.result)
 {
 	#prep a table for the function below
-	groupsDF <- data.frame(species=unlist(dropped.results[[2]]),
-		group=rep(dropped.results[[1]]$tip.label, unlist(lapply(dropped.results[[2]], length))),
+	groupsDF <- data.frame(species=unlist(dropped.result[[2]]),
+		group=rep(dropped.result[[1]]$tip.label, unlist(lapply(dropped.result[[2]], length))),
 		stringsAsFactors=FALSE)
 
 	#and merge in the clade states for another function further below
-	groupsDF <- merge(groupsDF, clade.table[,c("state","clade")], by.x="group", by.y="clade")
+	groupsDF <- merge(groupsDF, oc.result[,c("state","clade")], by.x="group", by.y="clade")
 
 	uniqueGroups <- unique(groupsDF$group)
 
 	#set this aside here
-	tree <- dropped.results[[1]]
+	tree <- dropped.result[[1]]
 
 	for(i in 1:length(uniqueGroups))
 	{

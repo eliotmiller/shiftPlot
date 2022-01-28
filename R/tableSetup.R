@@ -10,8 +10,6 @@
 #' @author Eliot Miller
 #' 
 #' @export
-#' 
-#' @examples
 
 tableSetup <- function(tree1, tree2)
 {

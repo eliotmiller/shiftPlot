@@ -4,7 +4,7 @@
 #'
 #' @param tree1 The first tree.
 #' @param tree2 The second tree.
-#' @param results Results from a run of the idMatches function.
+#' @param id.results Results from a run of the idMatches function.
 #' @param least.inclusive Do you want to keep the smallest or largest set of
 #' matched taxa. See details. 
 #' 
@@ -15,25 +15,23 @@
 #' from tree 2 to be A,B,Z or A,B,Z,C.
 #'
 #' @author Eliot Miller
-#' 
-#' @examples
 
-equivCut <- function(tree1, tree2, results, least.inclusive)
+equivCut <- function(tree1, tree2, id.results, least.inclusive)
 {
   #identify nodes that appear more than once
-  dups <- unique(results[,2][duplicated(results[,2])])
+  dups <- unique(id.results[,2][duplicated(id.results[,2])])
   
   #if there aren't any, return the original results
   if(length(dups)==0)
   {
-    return(results)
+    return(id.results)
   }
   
   #loop through, add details on size of clade to data frame
   for(i in 1:length(dups))
   {
     #set aside all the results that pertain to that node
-    setAside <- results[results[,2]==dups[i],]
+    setAside <- id.results[id.results[,2]==dups[i],]
     
     #go through each node and figure out how many taxa descend from that node
     temp <- data.frame(matrix(nrow=dim(setAside)[1], ncol=2))
@@ -49,16 +47,16 @@ equivCut <- function(tree1, tree2, results, least.inclusive)
     {
       keep <- temp$node[temp$no.taxa==min(temp$no.taxa)]
       toDrop <- setdiff(temp$node, keep)
-      results <- results[!(results$tree1 %in% toDrop),]
+      id.results <- id.results[!(id.results$tree1 %in% toDrop),]
     }
     
     else
     {
       keep <- temp$node[temp$no.taxa==max(temp$no.taxa)]
       toDrop <- setdiff(temp$node, keep)
-      results <- results[!(results$tree1 %in% toDrop),]
+      id.results <- id.results[!(id.results$tree1 %in% toDrop),]
     }
   }
   
-  results
+  id.results
 }
