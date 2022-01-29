@@ -4,7 +4,7 @@
 #'
 #' @param orig.tree Phylogeny in ape format, corresponding to states.df.
 #' @param states.df Data frame in the specified shiftPlot format. Should contain one
-#' column named "present", and a 0 or a 1 for every node in the phylogeny, with the tips
+#' column named "state", and number for every node in the phylogeny, with the tips
 #' above the internal nodes, and no row names. See details and examples. 
 #' @param flip.tips Whether or not to flip tips to the state of their parent nodes.
 #' 

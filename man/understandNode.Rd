@@ -23,3 +23,7 @@ trees or for if the user inputs a node without an ancestor in the tree.
 
 #' @author Eliot Miller
 }
+\examples{
+data(phy)
+understandNode(phy, 102)
+}

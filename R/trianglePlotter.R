@@ -9,16 +9,14 @@
 #' column named "state", and number for every node in the phylogeny, with the tips
 #' above the internal nodes, and no row names. See details and examples. 
 #' @param dropped.result The result of a call to dropManyTips.
-#' @param oc.result Data frame with four columns: node, present (0/1), collapse (0/1),
+#' @param oc.result The result of a call to optimalCollapse.
+#' Data frame with four columns: node, state, collapse (0/1),
 #' and clade. Node provides values indicating which nodes you will collapse (all nodes
-#' tipwards from the indicated node will be collapsed). Present indicates whether the
-#' tips being collapsed do or do not have the trait in question (I think this column is
-#' not actually used and can be skipped). Collapse indicates whether to actually collapse
+#' tipwards from the indicated node will be collapsed). Collapse indicates whether to actually collapse
 #' that node or not (allowing a user to manually override the results from optimalCollapse).
 #' Clade provides a character string which will be used to rename the collapsed clade.
 #' Initially, this is given a generic name based on the node being collapsed, but these can
-#' be replaced with a name of the user's choosing. This input (oc.result) is the output
-#' of optimalCollapse.
+#' be replaced with a name of the user's choosing. 
 #' @param branches Result of a call to firstBranches.
 #' @param is.result Result of a call to identifyShifts.
 #' @param translation.table A data frame with the following three columns: orig, the original
@@ -28,9 +26,9 @@
 #' @param label.offset How far away from the tips the clade name should be positioned.
 #' @param text.cex The size of the clade labels.
 #' @param pt.cex The size of the dots used to indicate shifts. Set to 0 to suppress points.
+#' @param seg.lwd Width of the edges in the plotted phylogeny.
 #' 
-#' @details Should change the graphical parameters so there's more space for long clade names.
-#' Should not plot the tips. Should allow customization of edge colors. 
+#' @details Ambitions of making this work for radial trees too.
 #'
 #' @author Eliot Miller and Bruce Martin
 #' 
@@ -81,10 +79,10 @@
 #' trianglePlotter(orig.tree=phy, poly.tree=polyTree, dropped.result=dropped,
 #' oc.result=ocResult, branches=branches, is.result=is.result,
 #' label.offset=0.3, text.cex=0.09, translation.table=translationTable,
-#' states.df=states, pt.cex=2)
+#' states.df=states, pt.cex=2, seg.lwd=0.1)
 
 trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.result, branches,
-                            is.result, translation.table, label.offset, text.cex, pt.cex)
+                            is.result, translation.table, label.offset, text.cex, pt.cex, seg.lwd)
 {
 	#set aside the coordinates
   coords <- getCoords(poly.tree)
@@ -197,7 +195,7 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.
 	segments(y0=coords$yy[as.vector(t(poly.tree$edge))],
 	         y1=coords$yy[rep(poly.tree$edge[,2],each=2)],
 	         x0=coords$xx[rep(poly.tree$edge[,1],each=2)],
-	         x1=coords$xx[as.vector(t(poly.tree$edge))], lwd=0.1, col=rep(cols,each=2))
+	         x1=coords$xx[as.vector(t(poly.tree$edge))], lwd=seg.lwd, col=rep(cols,each=2))
 	
 	#prep a table for the function below
 	groupsDF <- data.frame(species=unlist(dropped.result[[2]]),

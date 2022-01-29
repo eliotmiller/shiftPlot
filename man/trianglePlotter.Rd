@@ -15,7 +15,8 @@ trianglePlotter(
   translation.table,
   label.offset,
   text.cex,
-  pt.cex
+  pt.cex,
+  seg.lwd
 )
 }
 \arguments{
@@ -30,16 +31,14 @@ above the internal nodes, and no row names. See details and examples.}
 
 \item{dropped.result}{The result of a call to dropManyTips.}
 
-\item{oc.result}{Data frame with four columns: node, present (0/1), collapse (0/1),
+\item{oc.result}{The result of a call to optimalCollapse.
+Data frame with four columns: node, state, collapse (0/1),
 and clade. Node provides values indicating which nodes you will collapse (all nodes
-tipwards from the indicated node will be collapsed). Present indicates whether the
-tips being collapsed do or do not have the trait in question (I think this column is
-not actually used and can be skipped). Collapse indicates whether to actually collapse
+tipwards from the indicated node will be collapsed). Collapse indicates whether to actually collapse
 that node or not (allowing a user to manually override the results from optimalCollapse).
 Clade provides a character string which will be used to rename the collapsed clade.
 Initially, this is given a generic name based on the node being collapsed, but these can
-be replaced with a name of the user's choosing. This input (oc.result) is the output
-of optimalCollapse.}
+be replaced with a name of the user's choosing.}
 
 \item{branches}{Result of a call to firstBranches.}
 
@@ -55,13 +54,14 @@ that trait state.}
 \item{text.cex}{The size of the clade labels.}
 
 \item{pt.cex}{The size of the dots used to indicate shifts. Set to 0 to suppress points.}
+
+\item{seg.lwd}{Width of the edges in the plotted phylogeny.}
 }
 \description{
 Use the optimal collapses to create a tree where triangles represent clades.
 }
 \details{
-Should change the graphical parameters so there's more space for long clade names.
-Should not plot the tips. Should allow customization of edge colors.
+Ambitions of making this work for radial trees too.
 }
 \examples{
 #start with a corHMM output and build up a states.df
@@ -108,7 +108,7 @@ translationTable <- data.frame(orig=c("absent","present"), new=c(0,1), color=c("
 trianglePlotter(orig.tree=phy, poly.tree=polyTree, dropped.result=dropped,
 oc.result=ocResult, branches=branches, is.result=is.result,
 label.offset=0.3, text.cex=0.09, translation.table=translationTable,
-states.df=states, pt.cex=2)
+states.df=states, pt.cex=2, seg.lwd=0.1)
 }
 \author{
 Eliot Miller and Bruce Martin

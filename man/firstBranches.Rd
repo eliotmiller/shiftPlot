@@ -11,16 +11,9 @@ firstBranches(orig.tree, dropped.result, oc.result)
 
 \item{dropped.result}{The result of a call to dropManyTips.}
 
-\item{oc.result}{Data frame with four columns: node, present (0/1), collapse (0/1),
-and clade. Node provides values indicating which nodes you will collapse (all nodes
-tipwards from the indicated node will be collapsed). Present indicates whether the
-tips being collapsed do or do not have the trait in question (I think this column is
-not actually used and can be skipped). Collapse indicates whether to actually collapse
-that node or not (allowing a user to manually override the results from optimalCollapse).
-Clade provides a character string which will be used to rename the collapsed clade.
-Initially, this is given a generic name based on the node being collapsed, but these can
-be replaced with a name of the user's choosing. This input (oc.result) is the output
-of optimalCollapse.}
+\item{oc.result}{The result of a call to optimalCollapse.
+Data frame with four columns: node, state, collapse (0/1),
+and clade.}
 }
 \value{
 A vector providing the time of the first branching event for each clade in the

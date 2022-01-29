@@ -2,13 +2,11 @@
 #'
 #' Should be an unexported utility function but I'm too lazy.
 #'
-#' @param tree A phylogeny in ape format. This should be the polytomy tree, i.e. the
-#' result of a call to polytomyBind.
+#' @param tree A phylogeny in ape format.
 #' 
 #' @author Eliot Miller and Bruce Martin
 #'
-#' @return A vector providing the time of the first branching event for each clade in the
-#' tree that was collapsed.
+#' @return A list providing details on the plotted tree structure.
 #'
 #' @export
 #' 

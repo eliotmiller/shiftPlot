@@ -21,8 +21,8 @@ Ensure tips have the same states as their parent nodes, to preclude shifts on te
 branches.
 }
 \details{
-states.df should have one column titled "present". This column should be
-coded either as a 0 or a 1, indicating the presence of the trait. states.df should have
+states.df should have one column titled "state". This column should take the form
+of a numeric vector, indicating the statee of the trait. states.df should have
 as many rows as there are nodes in phylogeny, and the tip nodes should come first in
 the data frame. For example, you might rbind the $tip.states and $states objects from
 a corHMM output together to create states.df The main reason one would use this

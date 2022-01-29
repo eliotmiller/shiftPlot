@@ -14,6 +14,9 @@
 #'
 #' @export
 #' 
+#' @examples
+#' data(phy)
+#' understandNode(phy, 102)
 
 understandNode <- function(tree, node)
 {
