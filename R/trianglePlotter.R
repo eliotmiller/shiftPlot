@@ -19,10 +19,9 @@
 #' be replaced with a name of the user's choosing. 
 #' @param branches Result of a call to firstBranches.
 #' @param is.result Result of a call to identifyShifts.
-#' @param translation.table A data frame with the following three columns: orig, the original
-#' names of the states, e.g. "present" or "1,R1"; new, numbers used as shorthand to refer back
-#' to these original state names; color, the name of the color to use in the plot to indicate
-#' that trait state.
+#' @param translation.table A data frame with the following two columns: "state" and "color",
+#' the name of the color to use in the plot to indicate that that trait state. Color can be
+#' specified in a variety of ways--word, hexadecimal, probably rgb but untested.
 #' @param label.offset How far away from the tips the clade name should be positioned.
 #' @param text.cex The size of the clade labels.
 #' @param pt.cex The size of the dots used to indicate shifts. Set to 0 to suppress points.
@@ -73,7 +72,7 @@
 #' is.result <- identifyShifts(orig.tree=phy, states.df=induced, flip.tips=FALSE)
 #' 
 #' #create a color, state, and state name translation table
-#' translationTable <- data.frame(orig=c("absent","present"), new=c(0,1), color=c("black","red"))
+#' translationTable <- data.frame(state=c(0,1), color=c("black","red"))
 #' 
 #' #make the triangle plot
 #' trianglePlotter(orig.tree=phy, poly.tree=polyTree, dropped.result=dropped,
@@ -116,7 +115,7 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.
   
   #create table
   lookup <- data.frame(node=allShifts, state=toState)
-  lookup <- merge(lookup, translation.table[,c("new","color")], by.x="state", by.y="new")
+  lookup <- merge(lookup, translation.table)
   
   #figure out what the tip numbers (nodes) in the poly tree are of the tips that had shifts
   #as calculated on the real tree
@@ -146,7 +145,7 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.
   #begin by coloring all the branches the designated color for the root state. 
 	#find root state then find color and rep
 	rootState <- states.df[(length(orig.tree$tip.label)+1),"state"]
-	cols <- rep(translation.table$color[translation.table$new==rootState], dim(poly.tree$edge)[1])
+	cols <- rep(translation.table$color[translation.table$state==rootState], dim(poly.tree$edge)[1])
 
   #go into a for loop the length of internalShifts
 	for(i in 1:length(internalShiftsPoly))
@@ -237,7 +236,7 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.
 
 		#find the color the polygon should be
 		tempState <- unique(groupsDF$state[groupsDF$group==uniqueGroups[i]])
-		polyColor <- translation.table$color[translation.table$new==tempState]
+		polyColor <- translation.table$color[translation.table$state==tempState]
 
 		#unlist this shift object, but not recursively. see if any shifts correspond to the species
 		#defined in taxa. if so, then this is a state shift and you do want to add a point
@@ -281,7 +280,6 @@ trianglePlotter <- function(orig.tree, poly.tree, states.df, dropped.result, oc.
 	  #plot the shift, as it looks like a tip shift
     if(all.equal(as.numeric(theTime), 0, tolerance=0.001)==TRUE)
     {
-      
       next()
     }
 	  

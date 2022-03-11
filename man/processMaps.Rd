@@ -10,10 +10,9 @@ processMaps(simmaps, translation.table)
 \item{simmaps}{A list of simmaps; the result of a call to phytools::make.simmap
 where nsim > 1.}
 
-\item{translation.table}{A data frame with the following three columns: orig, the original
-names of the states, e.g. "present" or "1,R1"; new, numbers used as shorthand to refer back
-to these original state names; color, the name of the color to use in the plot to indicate
-that trait state.}
+\item{translation.table}{A data frame with the following two columns: "state" and "color",
+the name of the color to use in the plot to indicate that that trait state. Color can be
+specified in a variety of ways--word, hexadecimal, probably rgb but untested.}
 }
 \value{
 A new states.df.
