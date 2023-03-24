@@ -54,7 +54,14 @@
 
 firstBranches <- function(orig.tree, dropped.result, oc.result)
 {
-	#prep a table for the function below
+	#have bumped into a bug before which I believe is due to using trees with existing node
+  #labels, then having corHMM strip them out. throw an error if the tree has node labels
+  if(length(orig.tree$node.label > 0))
+  {
+    stop("Your original tree has node labels. Remove the node labels and rerun.")
+  }
+  
+  #prep a table for the function below
 	groupsDF <- data.frame(species=unlist(dropped.result[[2]]),
 		group=rep(dropped.result[[1]]$tip.label, unlist(lapply(dropped.result[[2]], length))),
 		stringsAsFactors=FALSE)
